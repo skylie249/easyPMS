@@ -5,8 +5,62 @@ import Link from "next/link";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase";
 import type { CategoryWithItems, ChecklistItem, Project } from "@/lib/types";
 import { ProgressBar } from "@/components/progress-ring";
+import type { Locale } from "@/lib/i18n";
 
-export default function ChecklistClient({ shareCode }: { shareCode: string }) {
+const STRINGS = {
+  ko: {
+    home: "← 홈",
+    copyCodeTitle: "탭하여 코드 복사",
+    codeLabel: (code: string) => `코드 ${code}`,
+    hideDone: "완료 항목 숨기기",
+    loading: "불러오는 중...",
+    configErrorTitle: "Supabase 설정이 필요합니다",
+    configErrorBody:
+      ".env.local에 NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY 를 설정한 뒤 다시 시도해주세요.",
+    notFoundTitle: "프로젝트를 찾을 수 없습니다",
+    notFoundCode: (code: string) => `코드: ${code}`,
+    backHome: "홈으로 돌아가기",
+    allDone: "모든 항목을 완료했습니다 🎉",
+    noItems: "항목이 없습니다",
+    save: "저장",
+    editAria: "수정",
+    deleteAria: "삭제",
+    addItemPlaceholder: "새 체크 항목 입력",
+    add: "추가",
+    addItem: "+ 항목 추가",
+  },
+  en: {
+    home: "← Home",
+    copyCodeTitle: "Tap to copy the code",
+    codeLabel: (code: string) => `Code ${code}`,
+    hideDone: "Hide completed items",
+    loading: "Loading...",
+    configErrorTitle: "Supabase configuration required",
+    configErrorBody:
+      "Set NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local and try again.",
+    notFoundTitle: "Project not found",
+    notFoundCode: (code: string) => `Code: ${code}`,
+    backHome: "Back to home",
+    allDone: "All items completed 🎉",
+    noItems: "No items yet",
+    save: "Save",
+    editAria: "Edit",
+    deleteAria: "Delete",
+    addItemPlaceholder: "New checklist item",
+    add: "Add",
+    addItem: "+ Add item",
+  },
+} as const;
+
+export function ChecklistClient({
+  shareCode,
+  lang,
+}: {
+  shareCode: string;
+  lang: Locale;
+}) {
+  const t = STRINGS[lang];
+  const prefix = lang === "en" ? "/en" : "";
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [project, setProject] = useState<Project | null>(null);
@@ -173,11 +227,8 @@ export default function ChecklistClient({ shareCode }: { shareCode: string }) {
     return (
       <main className="flex-1 flex items-center justify-center px-6 text-center">
         <div>
-          <p className="text-lg font-semibold mb-2">Supabase 설정이 필요합니다</p>
-          <p className="text-sm text-slate-500">
-            .env.local에 NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY
-            를 설정한 뒤 다시 시도해주세요.
-          </p>
+          <p className="text-lg font-semibold mb-2">{t.configErrorTitle}</p>
+          <p className="text-sm text-slate-500">{t.configErrorBody}</p>
         </div>
       </main>
     );
@@ -186,7 +237,7 @@ export default function ChecklistClient({ shareCode }: { shareCode: string }) {
   if (loading) {
     return (
       <main className="flex-1 flex items-center justify-center">
-        <p className="text-sm text-slate-400">불러오는 중...</p>
+        <p className="text-sm text-slate-400">{t.loading}</p>
       </main>
     );
   }
@@ -194,10 +245,10 @@ export default function ChecklistClient({ shareCode }: { shareCode: string }) {
   if (notFound || !project) {
     return (
       <main className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-3">
-        <p className="text-lg font-semibold">프로젝트를 찾을 수 없습니다</p>
-        <p className="text-sm text-slate-500">코드: {shareCode}</p>
-        <Link href="/" className="text-sm text-slate-900 underline">
-          홈으로 돌아가기
+        <p className="text-lg font-semibold">{t.notFoundTitle}</p>
+        <p className="text-sm text-slate-500">{t.notFoundCode(shareCode)}</p>
+        <Link href={`${prefix}/`} className="text-sm text-slate-900 underline">
+          {t.backHome}
         </Link>
       </main>
     );
@@ -208,17 +259,17 @@ export default function ChecklistClient({ shareCode }: { shareCode: string }) {
       {/* 헤더 */}
       <div className="sticky top-0 z-10 bg-white border-b border-slate-200 px-5 pt-4 pb-4">
         <div className="flex items-center justify-between mb-2">
-          <Link href="/" className="text-sm text-slate-500">
-            ← 홈
+          <Link href={`${prefix}/`} className="text-sm text-slate-500">
+            {t.home}
           </Link>
           <button
             onClick={() => {
               navigator.clipboard?.writeText(project.share_code);
             }}
             className="text-xs font-mono tracking-widest bg-slate-100 rounded-full px-3 py-1 text-slate-600 active:scale-95 transition"
-            title="탭하여 코드 복사"
+            title={t.copyCodeTitle}
           >
-            코드 {project.share_code}
+            {t.codeLabel(project.share_code)}
           </button>
         </div>
         <h1 className="text-lg font-bold text-slate-900 truncate">{project.name}</h1>
@@ -238,7 +289,7 @@ export default function ChecklistClient({ shareCode }: { shareCode: string }) {
             onChange={(e) => setHideDone(e.target.checked)}
             className="w-4 h-4 rounded accent-slate-900"
           />
-          완료 항목 숨기기
+          {t.hideDone}
         </label>
       </div>
 
@@ -285,7 +336,7 @@ export default function ChecklistClient({ shareCode }: { shareCode: string }) {
                 <div className="border-t border-slate-100">
                   {visibleItems.length === 0 && (
                     <p className="px-4 py-3 text-xs text-slate-400">
-                      {hideDone ? "모든 항목을 완료했습니다 🎉" : "항목이 없습니다"}
+                      {hideDone ? t.allDone : t.noItems}
                     </p>
                   )}
                   {visibleItems.map((item) => (
@@ -329,7 +380,7 @@ export default function ChecklistClient({ shareCode }: { shareCode: string }) {
                               onClick={() => saveEdit(item)}
                               className="text-xs font-semibold text-slate-900 px-2"
                             >
-                              저장
+                              {t.save}
                             </button>
                           </div>
                         ) : (
@@ -360,14 +411,14 @@ export default function ChecklistClient({ shareCode }: { shareCode: string }) {
                               setEditTitle(item.title);
                             }}
                             className="text-slate-300 active:text-slate-600 p-1 text-xs"
-                            aria-label="수정"
+                            aria-label={t.editAria}
                           >
                             ✎
                           </button>
                           <button
                             onClick={() => deleteItem(item)}
                             className="text-slate-300 active:text-red-500 p-1 text-xs"
-                            aria-label="삭제"
+                            aria-label={t.deleteAria}
                           >
                             ✕
                           </button>
@@ -387,14 +438,14 @@ export default function ChecklistClient({ shareCode }: { shareCode: string }) {
                           if (e.key === "Enter") addItem(cat.id);
                           if (e.key === "Escape") setAddingTo(null);
                         }}
-                        placeholder="새 체크 항목 입력"
+                        placeholder={t.addItemPlaceholder}
                         className="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm"
                       />
                       <button
                         onClick={() => addItem(cat.id)}
                         className="text-xs font-semibold text-white bg-slate-900 rounded-lg px-3"
                       >
-                        추가
+                        {t.add}
                       </button>
                     </div>
                   ) : (
@@ -405,7 +456,7 @@ export default function ChecklistClient({ shareCode }: { shareCode: string }) {
                       }}
                       className="w-full text-left px-4 py-2.5 text-xs text-slate-400 active:bg-slate-50"
                     >
-                      + 항목 추가
+                      {t.addItem}
                     </button>
                   )}
                 </div>

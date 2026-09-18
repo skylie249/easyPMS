@@ -19,12 +19,19 @@ Claude(Cowork)에서 초기 구현 후, VSCode + Claude Code로 이어서 작업
 - [x] 새 프로젝트 생성 화면 (`app/new/page.tsx`) — 템플릿 복제 로직 포함
   - 생성 완료 후 공유 코드를 보여주는 확인 화면 추가 (복사 버튼 + 이동 버튼)
   - Supabase 에러 메시지를 그대로 노출하도록 개선
-- [x] 체크리스트 상세 화면 (`app/p/[code]/checklist-client.tsx`)
+- [x] 체크리스트 상세 화면 (`components/checklist-client.tsx`)
   - 카테고리별 진행률, 접기/펼치기, 완료 항목 숨기기
   - 항목 체크/해제, 추가/수정/삭제
   - 로드 실패 시 실제 Supabase 에러 메시지 노출 + 재시도 버튼 추가
 - [x] `npm run build`, `npm run lint` 통과 확인 (컨테이너 환경 기준)
 - [x] 파비콘 추가 — 기본 Next.js 플레이스홀더 제거, `app/icon.tsx`(32x32) / `app/apple-icon.tsx`(180x180)로 브랜드 컬러(#0f172a) + 체크마크 아이콘 생성
+- [x] 영어(en) 다국어 지원 — 코드 완료, DB 반영은 수동 필요 (아래 이슈 #3 참고)
+  - `/en` 접두사 라우트 전체(홈, 새 프로젝트, 체크리스트 상세, 가이드, 소개, 개인정보처리방침, 이용약관) 영어 버전 추가, 한국어는 기존 URL 그대로 유지
+  - 인터랙티브 페이지는 `components/home-client.tsx`, `components/new-project-client.tsx`, `components/checklist-client.tsx`로 공용화하고 `lang` prop으로 문구 전환
+  - 체크리스트 템플릿(10개 카테고리·60여개 항목)도 영어로 번역해 `template_categories`/`template_items`에 `locale` 컬럼으로 구분 저장, `/en/new`은 `locale='en'` 템플릿을 조회해서 복제
+  - 각 페이지 하단/상단에 언어 전환 링크(한국어 ↔ English) 추가
+  - `robots.ts`/`sitemap.ts`에 `/en/*` 반영, `sitemap.ts`는 ko/en 페이지 간 `alternates.languages` 상호 연결
+  - 루트 레이아웃이 `<html lang="ko">`로 고정되어 있어 `/en/*`에서는 `components/html-lang-sync.tsx`(클라이언트 컴포넌트)로 `document.documentElement.lang`을 보정
 
 ## 진행 중 이슈 (다음 세션에서 우선 해결)
 
@@ -48,6 +55,17 @@ Claude(Cowork)에서 초기 구현 후, VSCode + Claude Code로 이어서 작업
 - [ ] 항목 체크/해제가 새로고침 후에도 유지되는지 확인
 - [ ] 항목 추가/수정/삭제 정상 동작 확인
 - [ ] 모바일 브라우저(또는 크롬 개발자도구 모바일 뷰)에서 레이아웃 확인
+
+### 3. 영어 템플릿 시드 DB 반영 필요 (다국어 지원)
+
+- 코드는 완료됐지만, `/en/new`에서 영어 체크리스트를 만들려면 Supabase의
+  `template_categories`/`template_items` 테이블에 `locale` 컬럼과 영어 템플릿
+  데이터(10개 카테고리, 60여개 항목)가 있어야 함
+- **사용자 조치 필요** (에이전트는 DB 자격증명이 없어 직접 실행 불가):
+  1. [Supabase SQL Editor](https://supabase.com/dashboard/project/gqghggwmanllfdsqzdap/sql/new)를 열고 `supabase/add_english_template.sql` 내용을 붙여넣어 실행
+     (locale 컬럼 추가 + 기존 한국어 데이터는 `locale='ko'`로 자동 유지 + 영어 템플릿 삽입, 재실행해도 중복 삽입 안 됨)
+  2. 실행 후 파일 하단 주석의 확인용 쿼리로 `template_categories`/`template_items`에 `ko`/`en` 로케일이 모두 있는지 확인
+  3. 배포된 사이트에서 `/en/new`으로 프로젝트 생성 → 영어 템플릿 60여개 항목이 정상 복제되는지 확인
 
 ## 향후 개선 아이디어 (선택)
 
@@ -90,9 +108,13 @@ Claude(Cowork)에서 초기 구현 후, VSCode + Claude Code로 이어서 작업
 ## 참고 파일 위치
 
 - 스키마: `supabase/schema.sql`
-- 템플릿 시드: `supabase/seed_template.sql`
-- 홈: `app/page.tsx`
-- 생성: `app/new/page.tsx`
-- 상세: `app/p/[code]/page.tsx`, `app/p/[code]/checklist-client.tsx`
+- 템플릿 시드: `supabase/seed_template.sql`(한국어), `supabase/seed_template_en.sql`(영어)
+- RLS 수정 마이그레이션: `supabase/fix_rls_policies.sql`
+- 영어 템플릿 마이그레이션: `supabase/add_english_template.sql`
+- 홈: `app/page.tsx`(ko), `app/en/page.tsx`(en) → `components/home-client.tsx`
+- 생성: `app/new/page.tsx`(ko), `app/en/new/page.tsx`(en) → `components/new-project-client.tsx`
+- 상세: `app/p/[code]/page.tsx`(ko), `app/en/p/[code]/page.tsx`(en) → `components/checklist-client.tsx`
+- 콘텐츠 페이지: `app/{about,privacy,terms,guide}/page.tsx`(ko), `app/en/{about,privacy,terms,guide}/page.tsx`(en)
+- 다국어 설정: `lib/i18n.ts`
 - Supabase 클라이언트: `lib/supabase.ts`
 - 타입: `lib/types.ts`

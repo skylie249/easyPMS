@@ -13,9 +13,14 @@ export default function PrivacyPage() {
   return (
     <main className="flex-1 px-5 py-10">
       <div className="mx-auto w-full max-w-2xl">
-        <Link href="/" className="text-sm text-slate-500 hover:text-slate-700">
-          ← 홈으로
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link href="/" className="text-sm text-slate-500 hover:text-slate-700">
+            ← 홈으로
+          </Link>
+          <Link href="/en/privacy" className="text-sm text-slate-500 underline hover:text-slate-700">
+            English
+          </Link>
+        </div>
 
         <h1 className="mt-4 text-2xl font-bold text-slate-900">
           개인정보처리방침

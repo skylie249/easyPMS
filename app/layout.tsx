@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Easy PMS 체크리스트",
   description: "SI 프로젝트 준비사항 · PMP 체크리스트를 모바일에서 관리",
 };

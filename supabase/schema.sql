@@ -40,10 +40,12 @@ create table if not exists checklist_items (
 );
 
 -- 4. 체크리스트 템플릿 (프로젝트 생성시 기본으로 복제되는 SI 실무 체크리스트 원본)
+-- locale: 'ko' | 'en' — 프로젝트 생성 화면의 언어에 맞는 템플릿을 조회하는 데 사용
 create table if not exists template_categories (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  sort_order int not null default 0
+  sort_order int not null default 0,
+  locale text not null default 'ko'
 );
 
 create table if not exists template_items (
@@ -51,7 +53,8 @@ create table if not exists template_items (
   category_id uuid not null references template_categories(id) on delete cascade,
   title text not null,
   description text,
-  sort_order int not null default 0
+  sort_order int not null default 0,
+  locale text not null default 'ko'
 );
 
 -- 인덱스

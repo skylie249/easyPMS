@@ -37,6 +37,7 @@ export type TemplateCategory = {
   id: string;
   name: string;
   sort_order: number;
+  locale: string;
 };
 
 export type TemplateItem = {
@@ -45,6 +46,7 @@ export type TemplateItem = {
   title: string;
   description: string | null;
   sort_order: number;
+  locale: string;
 };
 
 export type CategoryWithItems = ChecklistCategory & {

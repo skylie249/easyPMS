@@ -11,9 +11,14 @@ export default function GuidePage() {
   return (
     <main className="flex-1 px-5 py-10">
       <div className="mx-auto w-full max-w-2xl">
-        <Link href="/" className="text-sm text-slate-500 hover:text-slate-700">
-          ← 홈으로
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link href="/" className="text-sm text-slate-500 hover:text-slate-700">
+            ← 홈으로
+          </Link>
+          <Link href="/en/guide" className="text-sm text-slate-500 underline hover:text-slate-700">
+            English
+          </Link>
+        </div>
 
         <h1 className="mt-4 text-2xl font-bold text-slate-900">
           SI 프로젝트 체크리스트 가이드

@@ -1,4 +1,4 @@
-import ChecklistClient from "./checklist-client";
+import { ChecklistClient } from "@/components/checklist-client";
 
 export default async function ProjectPage({
   params,
@@ -6,5 +6,5 @@ export default async function ProjectPage({
   params: Promise<{ code: string }>;
 }) {
   const { code } = await params;
-  return <ChecklistClient shareCode={code.toUpperCase()} />;
+  return <ChecklistClient shareCode={code.toUpperCase()} lang="ko" />;
 }
