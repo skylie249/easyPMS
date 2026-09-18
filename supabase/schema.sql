@@ -69,15 +69,15 @@ alter table template_categories enable row level security;
 alter table template_items enable row level security;
 
 create policy "anon full access - projects" on projects
-  for all using (true) with check (true);
+  for all to anon using (true) with check (true);
 create policy "anon full access - checklist_categories" on checklist_categories
-  for all using (true) with check (true);
+  for all to anon using (true) with check (true);
 create policy "anon full access - checklist_items" on checklist_items
-  for all using (true) with check (true);
+  for all to anon using (true) with check (true);
 create policy "anon read - template_categories" on template_categories
-  for select using (true);
+  for select to anon using (true);
 create policy "anon read - template_items" on template_items
-  for select using (true);
+  for select to anon using (true);
 
 -- updated_at 자동 갱신
 create or replace function set_updated_at()

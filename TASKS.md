@@ -28,27 +28,17 @@ Claude(Cowork)에서 초기 구현 후, VSCode + Claude Code로 이어서 작업
 
 ## 진행 중 이슈 (다음 세션에서 우선 해결)
 
-### 1. Supabase RLS 정책 문제 (최우선)
+### 1. Supabase RLS 정책 문제 (최우선) — 코드 수정 완료, DB 반영은 수동 필요
 
-- 증상: 프로젝트 생성 후 상세 화면(`/p/[code]`) 진입 시 데이터 조회 실패로 추정
-- 확인 방법: 브라우저에서 재현 후 화면에 표시되는 정확한 에러 메시지 확인
-  (checklist-client.tsx가 이제 Supabase 에러 메시지를 그대로 보여주도록 수정됨)
-- 점검할 것:
-  1. Supabase 대시보드 > Table Editor에서 `projects`, `checklist_categories`, `checklist_items`, `template_categories`, `template_items` 테이블이 실제로 생성되어 있는지 확인
-  2. Supabase 대시보드 > Authentication > Policies에서 각 테이블에 `schema.sql`에 정의된 정책(`anon full access - ...`)이 실제로 적용되어 있는지 확인
-     - 특히 `for all using (true) with check (true)` 정책이 `anon` role에 적용되는지 (기본적으로 정책은 role 지정 없으면 `public`에 적용되지만, Supabase 클라이언트가 사용하는 `anon` key가 정책 대상에 포함되는지 재확인 필요)
-  3. `.env.local`의 `NEXT_PUBLIC_SUPABASE_ANON_KEY`가 `service_role` key가 아니라 `anon` `public` key인지 재확인 (자주 하는 실수)
-  4. Supabase SQL Editor에서 아래 쿼리로 직접 테스트:
-     ```sql
-     select * from projects; -- 잘 나오는지
-     ```
-     그리고 anon 권한으로 실행 시 (REST API로 직접 curl 테스트) 동일하게 나오는지 확인
-  5. 만약 정책이 문제라면, `schema.sql`의 정책을 다음처럼 role 명시로 재작성 고려:
-     ```sql
-     create policy "anon full access - projects" on projects
-       for all to anon using (true) with check (true);
-     ```
-     (기존 SQL은 `to anon`이 빠져있어 특정 Supabase 프로젝트 설정에 따라 적용 안 될 수 있음 — 이 부분이 유력한 원인)
+- 원인 확인됨: `schema.sql`의 정책이 role 지정 없이 생성되어(`for all using (true) with check (true)`)
+  Supabase 프로젝트 설정에 따라 `anon` role에 적용되지 않는 문제였음
+- 조치 완료:
+  - `supabase/schema.sql`의 정책 5개에 `to anon` 명시 추가 (신규 프로젝트 생성 시 기본으로 올바르게 적용됨)
+  - `supabase/fix_rls_policies.sql` 신규 작성 — 기존에 이미 생성된 Supabase 프로젝트의 정책을 안전하게(데이터 변경 없이) 재생성하는 마이그레이션 스크립트
+- **사용자 조치 필요** (에이전트는 DB 자격증명이 없어 직접 실행 불가):
+  1. [Supabase SQL Editor](https://supabase.com/dashboard/project/gqghggwmanllfdsqzdap/sql/new)를 열고 `supabase/fix_rls_policies.sql` 내용을 붙여넣어 실행
+  2. 실행 후 파일 하단 주석의 확인용 쿼리(`select ... from pg_policies ...`)로 각 정책의 `roles` 컬럼에 `{anon}`이 포함되는지 확인
+  3. 브라우저에서 프로젝트 생성 → 상세 화면(`/p/[code]`) 진입까지 재현하여 정상 동작 확인
 
 ### 2. 검증 필요 (RLS 수정 후)
 
