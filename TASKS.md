@@ -24,6 +24,7 @@ Claude(Cowork)에서 초기 구현 후, VSCode + Claude Code로 이어서 작업
   - 항목 체크/해제, 추가/수정/삭제
   - 로드 실패 시 실제 Supabase 에러 메시지 노출 + 재시도 버튼 추가
 - [x] `npm run build`, `npm run lint` 통과 확인 (컨테이너 환경 기준)
+- [x] 파비콘 추가 — 기본 Next.js 플레이스홀더 제거, `app/icon.tsx`(32x32) / `app/apple-icon.tsx`(180x180)로 브랜드 컬러(#0f172a) + 체크마크 아이콘 생성
 
 ## 진행 중 이슈 (다음 세션에서 우선 해결)
 
@@ -64,7 +65,7 @@ Claude(Cowork)에서 초기 구현 후, VSCode + Claude Code로 이어서 작업
 - [ ] 카테고리 자체 추가/삭제 기능 (현재는 항목만 추가/수정/삭제 가능)
 - [ ] 프로젝트 삭제 기능
 - [ ] 카테고리 순서 변경(드래그 정렬)
-- [ ] PWA 매니페스트 추가해서 "홈 화면에 추가" 시 아이콘/스플래시 적용
+- [x] PWA 매니페스트 추가해서 "홈 화면에 추가" 시 아이콘/스플래시 적용 (`app/manifest.ts`, `app/pwa-icon-192/route.tsx`, `app/pwa-icon-512/route.tsx`, 아이콘 드로잉 로직은 `lib/brand-icon.tsx`로 공용화하여 `icon.tsx`/`apple-icon.tsx`와 함께 재사용)
 
 ## AdSense 심사 준비 체크리스트
 
@@ -80,7 +81,7 @@ Claude(Cowork)에서 초기 구현 후, VSCode + Claude Code로 이어서 작업
 
 - [ ] 헤더/푸터 등 사이트 전역 내비게이션 정비 (현재는 코드 입력 기반 단일 플로우라 페이지 간 이동 경로가 약함)
 - [x] `robots.txt`, `sitemap.xml` 추가 (`app/robots.ts`, `app/sitemap.ts` — `/p/[code]`는 공유코드 기반 비공개 데이터라 크롤링 제외, 도메인은 `NEXT_PUBLIC_SITE_URL` 환경변수로 관리)
-- [ ] 커스텀 도메인 연결 확인 (Vercel 기본 `*.vercel.app` 서브도메인은 AdSense 승인이 제한되는 경우가 있어 커스텀 도메인 권장)
+- [x] 커스텀 도메인 연결 확인 (Vercel 기본 `*.vercel.app` 서브도메인은 AdSense 승인이 제한되는 경우가 있어 커스텀 도메인 권장) — `easypms.nexalab.app`으로 확정, `lib/site.ts` 기본값 및 `env.local.example`의 `NEXT_PUBLIC_SITE_URL` 갱신. Vercel 프로젝트에 실제 도메인 연결은 별도 확인 필요
 - [ ] 모바일 반응형 — 이미 반응형으로 구현되어 있음 (완료로 판단)
 - [ ] Google Search Console에 사이트 등록 및 색인 확인
 
