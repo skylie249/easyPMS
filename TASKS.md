@@ -1,0 +1,107 @@
+# Easy PMS 체크리스트 - TASKS
+
+Claude(Cowork)에서 초기 구현 후, VSCode + Claude Code로 이어서 작업하기 위한 진행 상황 기록입니다.
+
+## 프로젝트 개요
+
+- SI 프로젝트 준비사항/PMP 실무 체크리스트를 모바일에서 관리·참고하는 웹앱
+- 로그인 없이 6자리 공유 코드로 프로젝트 구분
+- Next.js(App Router) + Tailwind + Supabase(anon key) + Vercel 배포
+
+## 완료된 작업
+
+- [x] Next.js 프로젝트 초기 세팅 (`app/`, `lib/`, `components/`)
+- [x] Supabase 스키마 설계 (`supabase/schema.sql`)
+  - `projects`, `checklist_categories`, `checklist_items`, `template_categories`, `template_items`
+  - RLS 활성화 + anon 전체 CRUD 정책 포함되어 있음 (단, 실제 적용 시 오류 발생 중 — 아래 이슈 참고)
+- [x] SI 실무 체크리스트 템플릿 시드 데이터 (`supabase/seed_template.sql`) — 10개 카테고리, 약 60개 항목
+- [x] 홈 화면 (`app/page.tsx`) — 코드 입력 / 새 프로젝트 만들기
+- [x] 새 프로젝트 생성 화면 (`app/new/page.tsx`) — 템플릿 복제 로직 포함
+  - 생성 완료 후 공유 코드를 보여주는 확인 화면 추가 (복사 버튼 + 이동 버튼)
+  - Supabase 에러 메시지를 그대로 노출하도록 개선
+- [x] 체크리스트 상세 화면 (`app/p/[code]/checklist-client.tsx`)
+  - 카테고리별 진행률, 접기/펼치기, 완료 항목 숨기기
+  - 항목 체크/해제, 추가/수정/삭제
+  - 로드 실패 시 실제 Supabase 에러 메시지 노출 + 재시도 버튼 추가
+- [x] `npm run build`, `npm run lint` 통과 확인 (컨테이너 환경 기준)
+
+## 진행 중 이슈 (다음 세션에서 우선 해결)
+
+### 1. Supabase RLS 정책 문제 (최우선)
+
+- 증상: 프로젝트 생성 후 상세 화면(`/p/[code]`) 진입 시 데이터 조회 실패로 추정
+- 확인 방법: 브라우저에서 재현 후 화면에 표시되는 정확한 에러 메시지 확인
+  (checklist-client.tsx가 이제 Supabase 에러 메시지를 그대로 보여주도록 수정됨)
+- 점검할 것:
+  1. Supabase 대시보드 > Table Editor에서 `projects`, `checklist_categories`, `checklist_items`, `template_categories`, `template_items` 테이블이 실제로 생성되어 있는지 확인
+  2. Supabase 대시보드 > Authentication > Policies에서 각 테이블에 `schema.sql`에 정의된 정책(`anon full access - ...`)이 실제로 적용되어 있는지 확인
+     - 특히 `for all using (true) with check (true)` 정책이 `anon` role에 적용되는지 (기본적으로 정책은 role 지정 없으면 `public`에 적용되지만, Supabase 클라이언트가 사용하는 `anon` key가 정책 대상에 포함되는지 재확인 필요)
+  3. `.env.local`의 `NEXT_PUBLIC_SUPABASE_ANON_KEY`가 `service_role` key가 아니라 `anon` `public` key인지 재확인 (자주 하는 실수)
+  4. Supabase SQL Editor에서 아래 쿼리로 직접 테스트:
+     ```sql
+     select * from projects; -- 잘 나오는지
+     ```
+     그리고 anon 권한으로 실행 시 (REST API로 직접 curl 테스트) 동일하게 나오는지 확인
+  5. 만약 정책이 문제라면, `schema.sql`의 정책을 다음처럼 role 명시로 재작성 고려:
+     ```sql
+     create policy "anon full access - projects" on projects
+       for all to anon using (true) with check (true);
+     ```
+     (기존 SQL은 `to anon`이 빠져있어 특정 Supabase 프로젝트 설정에 따라 적용 안 될 수 있음 — 이 부분이 유력한 원인)
+
+### 2. 검증 필요 (RLS 수정 후)
+
+- [ ] 새 프로젝트 생성 → 완료 화면에서 코드 정상 표시 확인
+- [ ] "체크리스트로 이동" 클릭 → 상세 화면 정상 진입 확인
+- [ ] 홈에서 코드 입력 → 동일 프로젝트 재접속 확인
+- [ ] 항목 체크/해제가 새로고침 후에도 유지되는지 확인
+- [ ] 항목 추가/수정/삭제 정상 동작 확인
+- [ ] 모바일 브라우저(또는 크롬 개발자도구 모바일 뷰)에서 레이아웃 확인
+
+## 향후 개선 아이디어 (선택)
+
+- [ ] 프로젝트 목록 화면 (현재는 코드를 알아야만 접근 가능 — 브라우저 로컬에 최근 접속 코드 저장해서 홈에 "최근 프로젝트" 목록 보여주면 편의성 향상)
+- [ ] 카테고리 자체 추가/삭제 기능 (현재는 항목만 추가/수정/삭제 가능)
+- [ ] 프로젝트 삭제 기능
+- [ ] 카테고리 순서 변경(드래그 정렬)
+- [ ] PWA 매니페스트 추가해서 "홈 화면에 추가" 시 아이콘/스플래시 적용
+
+## AdSense 심사 준비 체크리스트
+
+이 웹앱(easyPMS)에 Google AdSense 광고를 게재하려면 심사를 통과해야 합니다. 아래는 심사 통과를 위해 준비해야 할 항목들입니다.
+
+### 필수 정책 페이지
+
+- [x] 개인정보처리방침(Privacy Policy) 페이지 추가 — AdSense 필수 요건. 수집하는 정보(공유 코드, Supabase 저장 데이터 등)와 쿠키/광고 관련 고지 포함 (`app/privacy/page.tsx`, 홈 화면 하단에 링크 추가)
+- [x] 이용약관(Terms of Service) 페이지 추가 (권장) (`app/terms/page.tsx`, 홈 화면 하단에 링크 추가)
+- [x] 소개(About) / 문의(Contact) 페이지 추가 — 사이트 운영 주체를 명확히 하면 심사에 유리 (`app/about/page.tsx`)
+
+### 사이트 구조 & 기술 요건
+
+- [ ] 헤더/푸터 등 사이트 전역 내비게이션 정비 (현재는 코드 입력 기반 단일 플로우라 페이지 간 이동 경로가 약함)
+- [x] `robots.txt`, `sitemap.xml` 추가 (`app/robots.ts`, `app/sitemap.ts` — `/p/[code]`는 공유코드 기반 비공개 데이터라 크롤링 제외, 도메인은 `NEXT_PUBLIC_SITE_URL` 환경변수로 관리)
+- [ ] 커스텀 도메인 연결 확인 (Vercel 기본 `*.vercel.app` 서브도메인은 AdSense 승인이 제한되는 경우가 있어 커스텀 도메인 권장)
+- [ ] 모바일 반응형 — 이미 반응형으로 구현되어 있음 (완료로 판단)
+- [ ] Google Search Console에 사이트 등록 및 색인 확인
+
+### 콘텐츠 요건 (주의 필요)
+
+- [x] "고유하고 가치 있는 콘텐츠(valuable content)" 정책 대응 — SI 프로젝트 10단계 실무 가이드 + 앱 사용법 + FAQ로 구성된 `app/guide/page.tsx` 추가, 홈/소개 페이지에서 링크, sitemap.ts에 등록
+- [ ] 사이트가 "공사 중" 상태가 아니라 실제로 작동하는 서비스여야 함 (현재 핵심 기능은 동작하므로 충족 가능성 높음, 단 RLS 이슈 해결 필요 — 위 이슈 #1 참고)
+- [ ] 금지 콘텐츠(성인물, 폭력, 저작권 침해 등) 없음 확인 — 해당 사항 없음
+
+### AdSense 신청 절차
+
+- [ ] AdSense 계정 생성 후 사이트 소유권 인증 (사이트에 인증 메타태그 또는 스니펫 삽입)
+- [ ] 심사 신청 및 대기 (통상 며칠~수 주 소요, 공식적인 최소 트래픽/사이트 운영 기간 기준은 없으나 실사용 이력이 있으면 유리)
+- [ ] 승인 후 `public/ads.txt`에 발급받은 퍼블리셔 ID로 `google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0` 형식의 항목 추가
+
+## 참고 파일 위치
+
+- 스키마: `supabase/schema.sql`
+- 템플릿 시드: `supabase/seed_template.sql`
+- 홈: `app/page.tsx`
+- 생성: `app/new/page.tsx`
+- 상세: `app/p/[code]/page.tsx`, `app/p/[code]/checklist-client.tsx`
+- Supabase 클라이언트: `lib/supabase.ts`
+- 타입: `lib/types.ts`
