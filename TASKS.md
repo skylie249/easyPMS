@@ -56,16 +56,11 @@ Claude(Cowork)에서 초기 구현 후, VSCode + Claude Code로 이어서 작업
 - [ ] 항목 추가/수정/삭제 정상 동작 확인
 - [ ] 모바일 브라우저(또는 크롬 개발자도구 모바일 뷰)에서 레이아웃 확인
 
-### 3. 영어 템플릿 시드 DB 반영 필요 (다국어 지원)
+### 3. 영어 템플릿 시드 DB 반영 필요 (다국어 지원) — 완료
 
-- 코드는 완료됐지만, `/en/new`에서 영어 체크리스트를 만들려면 Supabase의
-  `template_categories`/`template_items` 테이블에 `locale` 컬럼과 영어 템플릿
-  데이터(10개 카테고리, 60여개 항목)가 있어야 함
-- **사용자 조치 필요** (에이전트는 DB 자격증명이 없어 직접 실행 불가):
-  1. [Supabase SQL Editor](https://supabase.com/dashboard/project/gqghggwmanllfdsqzdap/sql/new)를 열고 `supabase/add_english_template.sql` 내용을 붙여넣어 실행
-     (locale 컬럼 추가 + 기존 한국어 데이터는 `locale='ko'`로 자동 유지 + 영어 템플릿 삽입, 재실행해도 중복 삽입 안 됨)
-  2. 실행 후 파일 하단 주석의 확인용 쿼리로 `template_categories`/`template_items`에 `ko`/`en` 로케일이 모두 있는지 확인
-  3. 배포된 사이트에서 `/en/new`으로 프로젝트 생성 → 영어 템플릿 60여개 항목이 정상 복제되는지 확인
+- [x] `supabase/add_english_template.sql` 실행 완료. Supabase REST API(anon key)로 직접 조회해 확인함:
+  `template_categories` ko 10개 / en 10개, `template_items` ko 64개 / en 64개, 영어 카테고리명 정상 삽입, anon 조회 정상 동작
+- [ ] 배포된 사이트에서 `/en/new`으로 실제 프로젝트 생성까지 사용자 확인 필요 (DB 데이터는 검증됨, UI 플로우는 미확인)
 
 ## 향후 개선 아이디어 (선택)
 
